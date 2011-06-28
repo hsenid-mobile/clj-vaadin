@@ -5,14 +5,19 @@
    :init cjinit
    :state state)
   (:use [vaadin.core])
-  (:import 
+  (:import [com.vaadin.terminal Sizeable]
            [com.vaadin Application]
            [com.vaadin.ui
             Button
             Button$ClickEvent
             Button$ClickListener
             GridLayout
+            HorizontalSplitPanel
             Label
+            Panel
+            Tree
+            VerticalLayout
+            VerticalSplitPanel
             Window]))
 
 (defn -cjinit []
@@ -28,16 +33,52 @@
        (.setValue display op)
        (show-tray-notification  main-window "Hello" "Yellow")))))
 
-(def ops ["7" "8" "9" "/" "4" "5" "6" "*" "1" "2" "3" "-" "0" "=" "C" "+"])
+(defonce planets [["Mercury" []]
+                  ["Venus" []]
+                  ["Earth" ["The Moon"]]
+                  ["Mars" ["Phobos" "Deimos"]]
+                  ["Jupiter" ["Io" "Europe" "Ganymedes" "Callisto"]]
+                  ["Saturn" ["Titan" "Tethys" "Dione" "Rhea" "Iapetus"]]
+                  ["Uranus" ["Miranda" "Ariel" "Umbriel" "Titania" "Oberon"]]
+                  ["Neptune" ["Triton" "Proteus" "Nereid" "Larissa"]]])
+
+(defn add-moons [tree planet moons]
+  (reduce (fn [tree moon]
+            (doto tree
+              (.addItem moon)
+              (.setParent moon planet)
+              (.setChildrenAllowed moon false)))
+          tree
+          moons))
+
+(defn add-planet [tree [planet moons]]
+  (.addItem tree planet)
+  (if (empty? moons)
+    (.setChildrenAllowed tree planet false)
+    (do
+      (add-moons tree planet moons)
+      (.expandItemsRecursively tree planet)))
+  tree)
+
+(defn planet-tree []
+  (let [tree (Tree. "The Planets and Major Moons")]
+    (reduce add-planet
+            tree
+            planets)))
+
 
 (defn -init [app]
-  (let [layout  (GridLayout. 4 5)
-        window  (main-window app "Caclulator" layout)
-        display (Label. "11")]
-    (swap! (.state app) assoc :main-window window)
-    (.addComponent layout display 0 0 3 0)
-    (doseq [btn (map #(Button. %) ops )]
-      (.addListener btn (calc-button-listener display app) )
-      (.addComponent layout btn))))
+    (let [layout  (VerticalLayout.)
+          window  (main-window app "Tree Example" layout)
+          panel (Panel. "Panel for split panel")
+          hsplit (HorizontalSplitPanel.)]
+      (swap! (.state app) assoc :main-window window)
+      (.setContent panel hsplit)
+      (.setSplitPosition hsplit 20 Sizeable/UNITS_PERCENTAGE)
+      (.setSizeFull layout)
+      (.setFirstComponent hsplit (planet-tree))
+      (.setSecondComponent hsplit (Label. "Hello wornderworld"))
+      (.addComponent window panel)))
+
 
 
