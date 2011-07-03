@@ -70,7 +70,7 @@
 (defn -init [app]
     (let [layout  (VerticalLayout.)
           window  (main-window app "Tree Example" layout)
-          panel (Panel. "Panel for split panel")
+          panel (Panel. "Panel for split panel III")
           hsplit (HorizontalSplitPanel.)]
       (swap! (.state app) assoc :main-window window)
       (.setContent panel hsplit)
